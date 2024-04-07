@@ -1,0 +1,6 @@
+mysql:
+  username: root
+  password: root
+  host: host.docker.internal
+  port: "3306"
+  database: YoutubeDatabase

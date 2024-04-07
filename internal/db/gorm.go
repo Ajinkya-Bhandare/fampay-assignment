@@ -3,6 +3,10 @@ package db
 import (
 	"fampay/internal/models"
 	"fmt"
+	"io"
+	"os"
+
+	"gopkg.in/yaml.v2"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -62,7 +66,28 @@ func SearchVideos(req models.GetSearchRequest) (resp models.GetSearchResponse, e
 }
 
 func getDBConn() (db *gorm.DB, err error) {
-	dsn := "root:root@tcp(host.docker.internal:3306)/YoutubeDatabase?parseTime=true"
+
+	file, err := os.Open("mysql.yaml")
+	if err != nil {
+		fmt.Println("Error opening config file:", err)
+		return
+	}
+	defer file.Close()
+
+	contents, err := io.ReadAll(file)
+	if err != nil {
+		fmt.Println("Error reading config file:", err)
+		return
+	}
+
+	var config models.Config
+	err = yaml.Unmarshal(contents, &config)
+	if err != nil {
+		fmt.Println("Error decoding config file:", err)
+		return
+	}
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", config.MySQL.Username, config.MySQL.Password, config.MySQL.Host, config.MySQL.Port, config.MySQL.Database)
+	fmt.Println(dsn)
 	gormDB, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
