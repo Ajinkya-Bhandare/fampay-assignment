@@ -6,11 +6,12 @@ import (
 	"fampay/internal/models"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v2"
 )
 
 type YouTubeVideo struct {
@@ -21,20 +22,21 @@ type YouTubeVideo struct {
 
 func fetchData() {
 
-	apiKey := "AIzaSyBTzJCmPaHuI7Uv9PyNL0weoDli1qaYVts"
+	config, err := getConfig()
 
-	// query for yt video
-	searchQuery := "cat videos"
-
+	if err != nil {
+		fmt.Println("Error fetching config:", err)
+		return
+	}
 	req, err := http.NewRequest("GET", "https://www.googleapis.com/youtube/v3/search", nil)
 	if err != nil {
-		log.Print(err)
-		os.Exit(1)
+		fmt.Println(err)
+		return
 	}
 
 	q := req.URL.Query()
-	q.Add("key", apiKey)
-	q.Add("q", searchQuery)
+	q.Add("key", config.ApiKey)
+	q.Add("q", config.Query)
 	q.Add("part", "snippet")
 	q.Add("maxResults", "10")
 	q.Add("order", "date")
@@ -137,4 +139,27 @@ func addToDB(data []models.VideoData) (err error) {
 func isDuplicateErr(err error) bool {
 	// Check for duplicate entry
 	return strings.Contains(err.Error(), "Duplicate entry")
+}
+
+func getConfig() (Config models.SearchConfig, err error) {
+	file, err := os.Open("search.yaml")
+	if err != nil {
+		fmt.Println("Error opening config file:", err)
+		return
+	}
+	defer file.Close()
+
+	contents, err := io.ReadAll(file)
+	if err != nil {
+		fmt.Println("Error reading config file:", err)
+		return
+	}
+
+	err = yaml.Unmarshal(contents, &Config)
+	if err != nil {
+		fmt.Println("Error decoding config file:", err)
+		return
+	}
+
+	return
 }

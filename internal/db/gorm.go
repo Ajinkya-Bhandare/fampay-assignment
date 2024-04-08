@@ -67,27 +67,14 @@ func SearchVideos(req models.GetSearchRequest) (resp models.GetSearchResponse, e
 
 func getDBConn() (db *gorm.DB, err error) {
 
-	file, err := os.Open("mysql.yaml")
-	if err != nil {
-		fmt.Println("Error opening config file:", err)
-		return
-	}
-	defer file.Close()
+	config, err := getConfig()
 
-	contents, err := io.ReadAll(file)
 	if err != nil {
-		fmt.Println("Error reading config file:", err)
+		fmt.Printf("Failed to get db config: %v\n", err)
 		return
 	}
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", config.Username, config.Password, config.Host, config.Port, config.Database)
 
-	var config models.Config
-	err = yaml.Unmarshal(contents, &config)
-	if err != nil {
-		fmt.Println("Error decoding config file:", err)
-		return
-	}
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", config.MySQL.Username, config.MySQL.Password, config.MySQL.Host, config.MySQL.Port, config.MySQL.Database)
-	fmt.Println(dsn)
 	gormDB, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
@@ -106,4 +93,26 @@ func closeDBConn(db *gorm.DB) (err error) {
 	}
 	sqlDB.Close()
 	return nil
+}
+
+func getConfig() (Config models.SQLConfig, err error) {
+	file, err := os.Open("mysql.yaml")
+	if err != nil {
+		fmt.Println("Error opening config file:", err)
+		return
+	}
+	defer file.Close()
+
+	contents, err := io.ReadAll(file)
+	if err != nil {
+		fmt.Println("Error reading config file:", err)
+		return
+	}
+
+	err = yaml.Unmarshal(contents, &Config)
+	if err != nil {
+		fmt.Println("Error decoding config file:", err)
+		return
+	}
+	return
 }
