@@ -22,7 +22,6 @@ type YouTubeVideo struct {
 func fetchData() {
 
 	apiKey := "AIzaSyBTzJCmPaHuI7Uv9PyNL0weoDli1qaYVts"
-	// apiKey := "test"
 
 	// query for yt video
 	searchQuery := "cat videos"

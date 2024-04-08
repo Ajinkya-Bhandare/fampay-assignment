@@ -15,7 +15,7 @@ func StartCron() {
 	c := cron.New()
 
 	// Schedule cron every minute
-	_, err := c.AddFunc("* * * * 30", fetchDataJob)
+	_, err := c.AddFunc("* * * * *", fetchDataJob)
 
 	// Start the cron
 	c.Start()
